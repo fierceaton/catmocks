@@ -1,0 +1,6 @@
+{
+  "name": "CAT Mock Generator AI",
+  "description": "An AI-powered application to generate custom CAT (Common Admission Test) mock tests from user-provided text files.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
