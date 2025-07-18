@@ -151,11 +151,11 @@ const parseJsonFromText = (text: string): any => {
 
 // --- DUMMY COMPONENTS (for reconstruction) ---
 
-const ApiKeyPrompt = ({ onApiKeySubmit }: { onApiKeySubmit: () => void }) => (
-    <div className="api-key-prompt-container">
-        <h1>Welcome to CAT Mock Generator AI</h1>
-        <p>This application uses the Google Gemini API to generate tests. Please ensure your API key is configured in the environment variables to proceed.</p>
-        <div className="spinner"></div>
+const ApiErrorScreen = () => (
+    <div className="centered-message-container">
+        <h1>Configuration Error</h1>
+        <p>The <code>API_KEY</code> environment variable is not set.</p>
+        <p style={{color: 'var(--text-secondary)'}}>Please configure the API key in your environment to use the application. The application cannot proceed without it.</p>
     </div>
 );
 
@@ -267,11 +267,11 @@ const DashboardScreen = ({ savedTests, onStartTest, onCreateTest, onDeleteTest, 
 // --- MAIN APP COMPONENT ---
 
 const App = () => {
-  type Screen = 'api_prompt' | 'dashboard' | 'upload' | 'loading' | 'test' | 'analysis';
+  type Screen = 'dashboard' | 'upload' | 'loading' | 'test' | 'analysis' | 'api_error';
 
   const [ai, setAi] = useState<GoogleGenAI | null>(null);
-  const [currentScreen, setCurrentScreen] = useState<Screen>('api_prompt');
-  const [loadingMessage, setLoadingMessage] = useState('');
+  const [currentScreen, setCurrentScreen] = useState<Screen>('loading');
+  const [loadingMessage, setLoadingMessage] = useState('Initializing...');
   const [savedTests, setSavedTests] = useState<SavedTest[]>([]);
   const [activeTestId, setActiveTestId] = useState<string | null>(null);
   
@@ -294,8 +294,11 @@ const App = () => {
         setCurrentScreen('dashboard');
       } catch (error) {
         console.error("Error initializing GoogleGenAI:", error);
-        alert("Failed to initialize AI. Please check the API key.");
+        setCurrentScreen('api_error');
       }
+    } else {
+        console.error("API_KEY environment variable not set.");
+        setCurrentScreen('api_error');
     }
   }, []);
   
@@ -319,8 +322,8 @@ const App = () => {
 
   const renderContent = () => {
     switch (currentScreen) {
-      case 'api_prompt':
-        return <ApiKeyPrompt onApiKeySubmit={() => {}} />;
+      case 'api_error':
+        return <ApiErrorScreen />;
       case 'dashboard':
         return <DashboardScreen 
                     savedTests={savedTests} 
