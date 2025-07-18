@@ -149,44 +149,15 @@ const parseJsonFromText = (text: string): any => {
     }
 };
 
-// --- UI COMPONENTS ---
+// --- DUMMY COMPONENTS (for reconstruction) ---
 
-const ApiKeyPrompt = ({ onApiKeySubmit, error }: { onApiKeySubmit: (key: string) => void; error: string | null; }) => {
-    const [apiKey, setApiKey] = useState('');
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (apiKey.trim()) {
-            onApiKeySubmit(apiKey.trim());
-        }
-    };
-
-    return (
-        <div className="api-key-prompt-container">
-            <div className="api-key-box">
-                <h1>API Key Required</h1>
-                <p>Please enter your Google Gemini API key to use the app. Your key will be stored locally in your browser.</p>
-                <form onSubmit={handleSubmit}>
-                    <input
-                        type="password"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        placeholder="Enter your API Key"
-                        aria-label="API Key Input"
-                        className="api-key-input"
-                    />
-                    <button type="submit" className="btn primary" disabled={!apiKey.trim()}>
-                        Continue
-                    </button>
-                </form>
-                {error && <p className="error-message-prompt">{error}</p>}
-                 <div className="api-key-info">
-                    <p>You can get your API key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a>.</p>
-                </div>
-            </div>
-        </div>
-    );
-};
+const ApiKeyPrompt = ({ onApiKeySubmit }: { onApiKeySubmit: () => void }) => (
+    <div className="api-key-prompt-container">
+        <h1>Welcome to CAT Mock Generator AI</h1>
+        <p>This application uses the Google Gemini API to generate tests. Please ensure your API key is configured in the environment variables to proceed.</p>
+        <div className="spinner"></div>
+    </div>
+);
 
 const UploadScreen = ({ onBack, onGenerate }: { onBack: () => void, onGenerate: () => void }) => (
     <div className="upload-container">
@@ -296,14 +267,13 @@ const DashboardScreen = ({ savedTests, onStartTest, onCreateTest, onDeleteTest, 
 // --- MAIN APP COMPONENT ---
 
 const App = () => {
-  type Screen = 'dashboard' | 'upload' | 'loading' | 'test' | 'analysis' | 'api_prompt';
+  type Screen = 'api_prompt' | 'dashboard' | 'upload' | 'loading' | 'test' | 'analysis';
 
   const [ai, setAi] = useState<GoogleGenAI | null>(null);
-  const [currentScreen, setCurrentScreen] = useState<Screen>('loading');
-  const [loadingMessage, setLoadingMessage] = useState('Initializing...');
+  const [currentScreen, setCurrentScreen] = useState<Screen>('api_prompt');
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [savedTests, setSavedTests] = useState<SavedTest[]>([]);
   const [activeTestId, setActiveTestId] = useState<string | null>(null);
-  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   
   const [theme, setTheme] = useState<AppTheme>(() => (localStorage.getItem('appTheme') as AppTheme || 'dark'));
 
@@ -317,39 +287,19 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    const storedApiKey = localStorage.getItem('gemini_api_key');
-    if (storedApiKey) {
+    if (process.env.API_KEY) {
       try {
-        const genAI = new GoogleGenAI({ apiKey: storedApiKey });
+        const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
         setAi(genAI);
         setCurrentScreen('dashboard');
       } catch (error) {
-        console.error("Failed to initialize with stored API key:", error);
-        localStorage.removeItem('gemini_api_key');
-        setApiKeyError("The stored API key is invalid. Please enter a new one.");
-        setCurrentScreen('api_prompt');
+        console.error("Error initializing GoogleGenAI:", error);
+        alert("Failed to initialize AI. Please check the API key.");
       }
-    } else {
-      setCurrentScreen('api_prompt');
     }
   }, []);
   
-  const handleApiKeySubmit = (key: string) => {
-    try {
-      const genAI = new GoogleGenAI({ apiKey: key });
-      // The constructor doesn't throw an error for a syntactically valid but incorrect key.
-      // A true validation would require an API call. For this app's purpose, we'll proceed
-      // and let the user discover an invalid key upon first use.
-      setAi(genAI);
-      localStorage.setItem('gemini_api_key', key);
-      setApiKeyError(null);
-      setCurrentScreen('dashboard');
-    } catch (error) {
-      console.error("API Key initialization failed:", error);
-      setApiKeyError("There was a problem with the API Key. Please check the console.");
-    }
-  };
-
+  // Dummy functions for component props
   const startTest = (id: string) => {
     setActiveTestId(id);
     setCurrentScreen('test');
@@ -370,7 +320,7 @@ const App = () => {
   const renderContent = () => {
     switch (currentScreen) {
       case 'api_prompt':
-        return <ApiKeyPrompt onApiKeySubmit={handleApiKeySubmit} error={apiKeyError} />;
+        return <ApiKeyPrompt onApiKeySubmit={() => {}} />;
       case 'dashboard':
         return <DashboardScreen 
                     savedTests={savedTests} 
